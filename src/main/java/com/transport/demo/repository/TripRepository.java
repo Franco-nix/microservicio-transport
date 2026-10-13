@@ -14,9 +14,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     SELECT t FROM Trip t
     JOIN t.route r
     JOIN t.vehicle v
-    WHERE (:origin IS NULL OR LOWER(r.origin) LIKE LOWER(CONCAT('%', :origin, '%')))
-      AND (:destination IS NULL OR LOWER(r.destination) LIKE LOWER(CONCAT('%', :destination, '%')))
-      AND (:vehicleType IS NULL OR LOWER(v.vehicleType) LIKE LOWER(CONCAT('%', :vehicleType, '%')))
+    WHERE (CAST(:origin AS String) IS NULL OR LOWER(r.origin) LIKE LOWER(CONCAT('%', CAST(:origin AS String), '%')))
+      AND (CAST(:destination AS String) IS NULL OR LOWER(r.destination) LIKE LOWER(CONCAT('%', CAST(:destination AS String), '%')))
+      AND (CAST(:vehicleType AS String) IS NULL OR LOWER(v.vehicleType) LIKE LOWER(CONCAT('%', CAST(:vehicleType AS String), '%')))
     """)
     List<Trip> searchTrips(
             @Param("origin") String origin,

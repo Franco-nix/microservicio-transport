@@ -66,11 +66,12 @@
                         <th>Destino</th>
                         <th>Fecha</th>
                         <th>Precio</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tripsBody">
                     <tr>
-                        <td colspan="5" class="text-center text-muted">Cargando viajes...</td>
+                        <td colspan="6" class="text-center text-muted">Cargando viajes...</td>
                     </tr>
                 </tbody>
             </table>
@@ -79,6 +80,19 @@
 
     <!-- SCRIPT DE JAVASCRIPT PARA USAR LA API -->
     <script>
+        async function deleteTrip(id) {
+            if (!confirm('¿Eliminar este viaje?')) return;
+
+            try {
+                const response = await fetch(`/api/trips/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                loadTrips();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('No se pudo eliminar el viaje.');
+            }
+        }
+
         async function loadTrips() {
             const params = new URLSearchParams();
             const origin = document.getElementById('searchOrigin').value.trim();
@@ -90,7 +104,7 @@
             if (vehicleType) params.append('vehicleType', vehicleType);
 
             const tbody = document.getElementById('tripsBody');
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Cargando viajes...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Cargando viajes...</td></tr>`;
 
             try {
                 const response = await fetch(`/api/trips?${params.toString()}`);
@@ -100,7 +114,7 @@
                 tbody.innerHTML = '';
 
                 if (trips.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No se encontraron viajes</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No se encontraron viajes</td></tr>`;
                     return;
                 }
 
@@ -118,11 +132,20 @@
                         td.textContent = value ?? '';
                         row.appendChild(td);
                     });
+
+                    const actionsTd = document.createElement('td');
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-sm btn-danger';
+                    deleteBtn.textContent = 'Eliminar';
+                    deleteBtn.addEventListener('click', () => deleteTrip(trip.id));
+                    actionsTd.appendChild(deleteBtn);
+                    row.appendChild(actionsTd);
+
                     tbody.appendChild(row);
                 });
             } catch (error) {
                 console.error('Error:', error);
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error al consultar los viajes.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al consultar los viajes.</td></tr>`;
             }
         }
 

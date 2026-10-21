@@ -63,4 +63,11 @@ public class TransportController {
     public Trip createTrip(@RequestBody TripRequest request) {
         return tripService.createTrip(request);
     }
+
+    @DeleteMapping("/api/trips/{id}")
+    @ResponseBody
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTrip(@PathVariable Long id) {
+        tripService.deleteTrip(id);
+    }
 }

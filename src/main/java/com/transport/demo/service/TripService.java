@@ -88,6 +88,12 @@ public class TripService {
         return tripRepository.save(trip);
     }
 
+    public void deleteTrip(Long id) {
+        Trip trip = tripRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Viaje no encontrado"));
+        tripRepository.delete(trip);
+    }
+
     private String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }

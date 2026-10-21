@@ -43,9 +43,19 @@
     <div class="card">
         <div class="card-header bg-primary text-white">Consultar Viajes Disponibles</div>
         <div class="card-body">
-            <form method="get" action="/" class="input-group mb-3">
-                <input type="text" name="destination" class="form-control" placeholder="Filtrar por destino..." th:value="${destination}">
-                <button class="btn btn-primary" type="submit">Buscar</button>
+            <form id="searchForm" class="row g-2 mb-3">
+                <div class="col">
+                    <input type="text" id="searchOrigin" class="form-control" placeholder="Origen...">
+                </div>
+                <div class="col">
+                    <input type="text" id="searchDestination" class="form-control" placeholder="Destino...">
+                </div>
+                <div class="col">
+                    <input type="text" id="searchVehicleType" class="form-control" placeholder="Tipo de vehículo...">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" type="submit">Buscar</button>
+                </div>
             </form>
 
             <table class="table table-striped">
@@ -58,24 +68,69 @@
                         <th>Precio</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr th:each="trip : ${trips}">
-                        <td th:text="${trip.id}">1</td>
-                        <td th:text="${trip.route?.origin}">Lima</td>
-                        <td th:text="${trip.route?.destination}">Trujillo</td>
-                        <td th:text="${trip.departureDate != null ? #temporals.format(trip.departureDate, 'dd-MM-yyyy HH:mm') : ''}">2026-06-01</td>
-                        <td th:text="${trip.price}">50.0</td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(trips)}">
-                        <td colspan="5" class="text-center text-muted">No se encontraron viajes</td>
+                <tbody id="tripsBody">
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Cargando viajes...</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- SCRIPT DE JAVASCRIPT PARA ENVIAR EL POST -->
+    <!-- SCRIPT DE JAVASCRIPT PARA USAR LA API -->
     <script>
+        async function loadTrips() {
+            const params = new URLSearchParams();
+            const origin = document.getElementById('searchOrigin').value.trim();
+            const destination = document.getElementById('searchDestination').value.trim();
+            const vehicleType = document.getElementById('searchVehicleType').value.trim();
+
+            if (origin) params.append('origin', origin);
+            if (destination) params.append('destination', destination);
+            if (vehicleType) params.append('vehicleType', vehicleType);
+
+            const tbody = document.getElementById('tripsBody');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Cargando viajes...</td></tr>`;
+
+            try {
+                const response = await fetch(`/api/trips?${params.toString()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const trips = await response.json();
+                tbody.innerHTML = '';
+
+                if (trips.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No se encontraron viajes</td></tr>`;
+                    return;
+                }
+
+                trips.forEach(trip => {
+                    const row = document.createElement('tr');
+                    const cells = [
+                        trip.id,
+                        trip.route ? trip.route.origin : '',
+                        trip.route ? trip.route.destination : '',
+                        trip.departureDate ? trip.departureDate.replace('T', ' ').slice(0, 16) : '',
+                        trip.price
+                    ];
+                    cells.forEach(value => {
+                        const td = document.createElement('td');
+                        td.textContent = value ?? '';
+                        row.appendChild(td);
+                    });
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error al consultar los viajes.</td></tr>`;
+            }
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            loadTrips();
+        });
+
         document.getElementById('tripForm').addEventListener('submit', async function(e) {
             e.preventDefault(); // Evita que la página se recargue por completo
 
@@ -100,9 +155,9 @@
                 const msgDiv = document.getElementById('responseMessage');
 
                 if (response.ok) {
-                    msgDiv.innerHTML = `<div class="alert alert-success">¡Viaje registrado con éxito en PostgreSQL! Recargando...</div>`;
+                    msgDiv.innerHTML = `<div class="alert alert-success">¡Viaje registrado con éxito!</div>`;
                     document.getElementById('tripForm').reset(); // Limpiar formulario
-                    setTimeout(() => location.reload(), 1500); // Recargar la página para ver el viaje en la tabla
+                    loadTrips(); // Refrescar la tabla usando la API
                 } else {
                     msgDiv.innerHTML = `<div class="alert alert-danger">Error al registrar el viaje.</div>`;
                 }
@@ -111,6 +166,8 @@
                 document.getElementById('responseMessage').innerHTML = `<div class="alert alert-danger">Error de red con el servidor.</div>`;
             }
         });
+
+        loadTrips();
     </script>
 </body>
 </html>

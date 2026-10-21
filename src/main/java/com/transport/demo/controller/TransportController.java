@@ -48,6 +48,22 @@ public class TransportController {
     }
 
     @ResponseBody
+    @GetMapping("/api/trips")
+    public List<Trip> searchTripsApi(
+            @RequestParam(required = false) String origin,
+            @RequestParam(required = false) String destination,
+            @RequestParam(required = false) String vehicleType) {
+        return tripRepository.searchTrips(
+                normalize(origin),
+                normalize(destination),
+                normalize(vehicleType));
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    @ResponseBody
     @GetMapping("/api/stats/destinations/most-visited")
     public List<Object[]> getMostVisitedApi() {
         return tripRepository.findMostVisitedRaw();
